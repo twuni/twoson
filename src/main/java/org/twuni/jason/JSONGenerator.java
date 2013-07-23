@@ -68,6 +68,7 @@ public class JSONGenerator {
 			out.write( c );
 		}
 		out.write( '"' );
+		burn( value );
 	}
 
 	public void writeNull() throws IOException {
@@ -84,6 +85,18 @@ public class JSONGenerator {
 
 	public void closeObject() throws IOException {
 		out.write( '}' );
+	}
+
+	private static void burn( char [] buffer ) {
+		for( int i = 0; i < buffer.length; i++ ) {
+			buffer[i] = 0;
+		}
+	}
+
+	private static void burn( byte [] buffer ) {
+		for( int i = 0; i < buffer.length; i++ ) {
+			buffer[i] = 0;
+		}
 	}
 
 }

@@ -99,14 +99,17 @@ public class JSONParser {
 						switch( scope.peek() ) {
 							case OBJECT:
 								listener.onObjectKey( string );
+								burn( string );
 								scope.push( Event.OBJECT_KEY );
 								break;
 							case OBJECT_KEY:
 								listener.onString( string );
+								burn( string );
 								scope.pop();
 								break;
 							default:
 								listener.onString( string );
+								burn( string );
 								break;
 						}
 						break;
@@ -195,9 +198,7 @@ public class JSONParser {
 				}
 			}
 		}
-		for( int i = 0; i < buffer.length; i++ ) {
-			buffer[i] = 0;
-		}
+		burn( buffer );
 	}
 
 	private static boolean isDigit( char c ) {
@@ -266,6 +267,12 @@ public class JSONParser {
 	}
 
 	private static void burn( char [] buffer ) {
+		for( int i = 0; i < buffer.length; i++ ) {
+			buffer[i] = 0;
+		}
+	}
+
+	private static void burn( byte [] buffer ) {
 		for( int i = 0; i < buffer.length; i++ ) {
 			buffer[i] = 0;
 		}
