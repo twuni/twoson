@@ -49,168 +49,190 @@ public class JSONParser {
 
 	public void read() throws IOException {
 
-		for( char c = nextChar(); c != '\0'; c = nextChar() ) {
+		try {
 
-			switch( c ) {
+			scope.push( Event.NONE );
+			for( char c = nextChar(); c != '\0'; c = nextChar() ) {
 
-				case '{':
-					scope.push( Event.OBJECT );
-					listener.onBeginObject();
-					break;
+				switch( c ) {
 
-				case '}':
-					scope.pop();
-					listener.onEndObject();
-					break;
+					case '{':
+						scope.push( Event.OBJECT );
+						listener.onBeginObject();
+						break;
 
-				case '[':
-					scope.push( Event.ARRAY );
-					listener.onBeginArray();
-					break;
-
-				case ']':
-					scope.pop();
-					listener.onEndArray();
-					break;
-
-				case ',':
-					switch( scope.peek() ) {
-						case ARRAY:
-						case OBJECT:
-							break;
-						default:
-							throw new IllegalStateException();
-					}
-					break;
-
-				case ':':
-					switch( scope.peek() ) {
-						case OBJECT_KEY:
-							break;
-						default:
-							throw new IllegalStateException();
-					}
-					break;
-
-				case ' ':
-				case '\t':
-				case '\r':
-				case '\n':
-					// Ignore whitespace.
-					break;
-
-				case '"':
-					int j;
-					// FIXME: Read-ahead only works properly if the right anchor exists within the
-					// buffer
-					for( j = offset; j < buffer.length; j++ ) {
-						if( buffer[j] == '\\' ) {
-							j++;
-							continue;
+					case '}':
+						switch( scope.peek() ) {
+							case NONE:
+							case OBJECT:
+							case OBJECT_KEY:
+								scope.pop();
+								listener.onEndObject();
+								break;
+							default:
+								throw new IllegalStateException( "was " + scope.peek() );
 						}
-						if( buffer[j] == '"' ) {
-							break;
+						break;
+
+					case '[':
+						scope.push( Event.ARRAY );
+						listener.onBeginArray();
+						break;
+
+					case ']':
+						switch( scope.peek() ) {
+							case NONE:
+							case ARRAY:
+								scope.pop();
+								listener.onEndArray();
+								break;
+							default:
+								throw new IllegalStateException();
 						}
-					}
-					char [] string = new char [j - offset];
-					for( int a = 0; a < string.length; a++ ) {
-						string[a] = (char) buffer[offset + a];
-					}
-					offset = j + 1;
-					switch( scope.peek() ) {
-						case OBJECT:
-							listener.onObjectKey( string );
-							burn( string );
-							scope.push( Event.OBJECT_KEY );
-							break;
-						case OBJECT_KEY:
-							listener.onString( string );
-							burn( string );
-							scope.pop();
-							break;
-						default:
-							listener.onString( string );
-							burn( string );
-							break;
-					}
-					break;
+						break;
 
-				case 't':
-					nextChar();// 'r'
-					nextChar();// 'u'
-					nextChar();// 'e'
-					listener.onBoolean( true );
-					switch( scope.peek() ) {
-						case OBJECT_KEY:
-							scope.pop();
-							break;
-						default:
-							break;
-					}
-					break;
+					case ',':
+						switch( scope.peek() ) {
+							case ARRAY:
+							case OBJECT:
+								break;
+							default:
+								throw new IllegalStateException();
+						}
+						break;
 
-				case 'f':
-					nextChar();// 'a'
-					nextChar();// 'l'
-					nextChar();// 's'
-					nextChar();// 'e'
-					listener.onBoolean( false );
-					switch( scope.peek() ) {
-						case OBJECT_KEY:
-							scope.pop();
-							break;
-						default:
-							break;
-					}
+					case ':':
+						switch( scope.peek() ) {
+							case OBJECT_KEY:
+								break;
+							default:
+								throw new IllegalStateException();
+						}
+						break;
 
-				case 'n':
-					nextChar();// 'u'
-					nextChar();// 'l'
-					nextChar();// 'l'
-					listener.onNull();
-					switch( scope.peek() ) {
-						case OBJECT_KEY:
-							scope.pop();
-							break;
-						default:
-							break;
-					}
+					case ' ':
+					case '\t':
+					case '\r':
+					case '\n':
+						// Ignore whitespace.
+						break;
 
-				case '-':
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-					double f = atof( c );
-					if( f - (int) f < 0.00001 ) {
-						listener.onInteger( (int) f );
-					} else {
-						listener.onFloat( (float) f );
-					}
-					switch( scope.peek() ) {
-						case OBJECT_KEY:
-							scope.pop();
-							break;
-						default:
-							break;
-					}
-					break;
+					case '"':
+						int j;
+						// FIXME: Read-ahead only works properly if the right anchor exists within
+						// the
+						// buffer
+						for( j = offset; j < buffer.length; j++ ) {
+							if( buffer[j] == '\\' ) {
+								j++;
+								continue;
+							}
+							if( buffer[j] == '"' ) {
+								break;
+							}
+						}
+						char [] string = new char [j - offset];
+						for( int a = 0; a < string.length; a++ ) {
+							string[a] = (char) buffer[offset + a];
+						}
+						offset = j + 1;
+						switch( scope.peek() ) {
+							case OBJECT:
+								listener.onObjectKey( string );
+								burn( string );
+								scope.push( Event.OBJECT_KEY );
+								break;
+							case OBJECT_KEY:
+								listener.onString( string );
+								burn( string );
+								scope.pop();
+								break;
+							default:
+								listener.onString( string );
+								burn( string );
+								break;
+						}
+						break;
 
-				default:
-					throw new IllegalStateException();
+					case 't':
+						nextChar();// 'r'
+						nextChar();// 'u'
+						nextChar();// 'e'
+						listener.onBoolean( true );
+						switch( scope.peek() ) {
+							case OBJECT_KEY:
+								scope.pop();
+								break;
+							default:
+								break;
+						}
+						break;
+
+					case 'f':
+						nextChar();// 'a'
+						nextChar();// 'l'
+						nextChar();// 's'
+						nextChar();// 'e'
+						listener.onBoolean( false );
+						switch( scope.peek() ) {
+							case OBJECT_KEY:
+								scope.pop();
+								break;
+							default:
+								break;
+						}
+
+					case 'n':
+						nextChar();// 'u'
+						nextChar();// 'l'
+						nextChar();// 'l'
+						listener.onNull();
+						switch( scope.peek() ) {
+							case OBJECT_KEY:
+								scope.pop();
+								break;
+							default:
+								break;
+						}
+
+					case '-':
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+						double f = atof( c );
+						if( f - (int) f < 0.00001 ) {
+							listener.onInteger( (int) f );
+						} else {
+							listener.onFloat( (float) f );
+						}
+						switch( scope.peek() ) {
+							case OBJECT_KEY:
+								scope.pop();
+								break;
+							default:
+								break;
+						}
+						break;
+
+					default:
+						throw new IllegalStateException();
+
+				}
 
 			}
 
+		} finally {
+			scope.clear();
+			burn( buffer );
+			buffer = null;
 		}
-
-		burn( buffer );
-		buffer = null;
 
 	}
 
