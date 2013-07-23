@@ -21,12 +21,16 @@ public class JSONParser {
 		OBJECT_KEY
 	}
 
-	private byte [] buffer = new byte [64 * 1024];
+	private byte [] buffer;
 	private int offset;
 	private int size;
 	private Stack<Event> scope = new Stack<Event>();
 
 	private char nextChar() throws IOException {
+		if( buffer == null ) {
+			buffer = new byte [64 * 1024];
+			size = in.read( buffer, 0, buffer.length );
+		}
 		if( offset >= size ) {
 			offset = 0;
 			size = in.read( buffer, 0, buffer.length );
@@ -45,7 +49,6 @@ public class JSONParser {
 
 	public void read() throws IOException {
 
-		size = in.read( buffer, 0, buffer.length );
 		for( char c = nextChar(); c != '\0'; c = nextChar() ) {
 
 			switch( c ) {
@@ -207,6 +210,7 @@ public class JSONParser {
 		}
 
 		burn( buffer );
+		buffer = null;
 
 	}
 
