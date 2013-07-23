@@ -95,11 +95,22 @@ public class JSONParser {
 					break;
 
 				case ',':
-					// Should only happen if our most recent event was an ARRAY or an OBJECT
+					switch( scope.peek() ) {
+						case ARRAY:
+						case OBJECT:
+							break;
+						default:
+							throw new IllegalStateException();
+					}
 					break;
 
 				case ':':
-					// Should only happen if our most recent event was an OBJECT_KEY.
+					switch( scope.peek() ) {
+						case OBJECT_KEY:
+							break;
+						default:
+							throw new IllegalStateException();
+					}
 					break;
 
 				case ' ':
