@@ -82,9 +82,11 @@ public class JSONParser {
 
 					case ']':
 						switch( scope.peek() ) {
-							case NONE:
 							case ARRAY:
 								scope.pop();
+								if( Event.OBJECT_KEY.equals( scope.peek() ) ) {
+									scope.pop();
+								}
 								listener.onEndArray();
 								break;
 							default:

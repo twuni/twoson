@@ -7,12 +7,12 @@ import org.junit.Test;
 
 public class JSONParserTest {
 
-	private static final byte [] SIREN = "{\n  \"request_resend\": \"iX-1243\",\n  \"message\": \"This is a good message.\",\n  \"shred_after\":60,\"location\":{\"latitude\":100.2345,\"longitude\":60.243}}".getBytes();
+	private static final byte [] TEST_OBJECT = "{\"a\":\"test\",\"b\":123,\"c\":[1,2,3],\"d\":{\"da\":1,\"db\":\"test\"}}".getBytes();
 
 	@Test
 	public void testParser() throws IOException {
 
-		JSONParser parser = new JSONParser( new ByteArrayInputStream( SIREN ), new JSONEventListener() {
+		JSONParser parser = new JSONParser( new ByteArrayInputStream( TEST_OBJECT ), new JSONEventListener() {
 
 			public void onBeginObject() {
 				System.out.println( "#onBeginObject" );
