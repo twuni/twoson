@@ -70,7 +70,7 @@ public class JSONParser {
 								listener.onEndObject();
 								break;
 							default:
-								throw new IllegalStateException( "was " + scope.peek() );
+								throw new IllegalStateException();
 						}
 						break;
 
