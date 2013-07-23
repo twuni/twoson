@@ -56,6 +56,10 @@ public class JSONGenerator {
 	}
 
 	public void writeCharArray( char [] value ) throws IOException {
+		writeCharArray( value, true );
+	}
+
+	public void writeCharArray( char [] value, boolean burnAfterwards ) throws IOException {
 		out.write( '"' );
 		for( int i = 0; i < value.length; i++ ) {
 			char c = value[i];
@@ -68,7 +72,9 @@ public class JSONGenerator {
 			out.write( c );
 		}
 		out.write( '"' );
-		burn( value );
+		if( burnAfterwards ) {
+			burn( value );
+		}
 	}
 
 	public void writeNull() throws IOException {
