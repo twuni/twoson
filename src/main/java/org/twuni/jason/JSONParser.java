@@ -224,8 +224,7 @@ public class JSONParser {
 					break;
 
 				default:
-					// Not sure what this is.
-					break;
+					throw new IllegalStateException();
 
 			}
 
