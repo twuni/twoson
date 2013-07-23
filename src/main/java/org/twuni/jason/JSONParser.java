@@ -70,7 +70,7 @@ public class JSONParser {
 								listener.onEndObject();
 								break;
 							default:
-								throw new IllegalStateException();
+								throw new IllegalFormatException( c, scope.peek().toString() );
 						}
 						break;
 
@@ -87,7 +87,7 @@ public class JSONParser {
 								listener.onEndArray();
 								break;
 							default:
-								throw new IllegalStateException();
+								throw new IllegalFormatException( c, scope.peek().toString() );
 						}
 						break;
 
@@ -97,7 +97,7 @@ public class JSONParser {
 							case OBJECT:
 								break;
 							default:
-								throw new IllegalStateException();
+								throw new IllegalFormatException( c, scope.peek().toString() );
 						}
 						break;
 
@@ -106,7 +106,7 @@ public class JSONParser {
 							case OBJECT_KEY:
 								break;
 							default:
-								throw new IllegalStateException();
+								throw new IllegalFormatException( c, scope.peek().toString() );
 						}
 						break;
 
@@ -222,7 +222,7 @@ public class JSONParser {
 						break;
 
 					default:
-						throw new IllegalStateException();
+						throw new IllegalFormatException( c, scope.peek().toString() );
 
 				}
 

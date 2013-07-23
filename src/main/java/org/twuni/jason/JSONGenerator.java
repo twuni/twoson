@@ -60,6 +60,10 @@ public class JSONGenerator {
 	}
 
 	public void writeCharArray( char [] value, boolean burnAfterwards ) throws IOException {
+		if( value == null ) {
+			writeNull();
+			return;
+		}
 		out.write( '"' );
 		for( int i = 0; i < value.length; i++ ) {
 			char c = value[i];
