@@ -26,7 +26,7 @@ public class JSONParser {
 	private int size;
 	private Stack<Event> scope = new Stack<Event>();
 
-	private char readNext() throws IOException {
+	private char nextChar() throws IOException {
 		if( offset >= size ) {
 			offset = 0;
 			size = in.read( buffer, 0, buffer.length );
@@ -46,7 +46,7 @@ public class JSONParser {
 	public void read() throws IOException {
 
 		size = in.read( buffer, 0, buffer.length );
-		for( char c = readNext(); c != '\0'; c = readNext() ) {
+		for( char c = nextChar(); c != '\0'; c = nextChar() ) {
 
 			switch( c ) {
 
@@ -133,9 +133,9 @@ public class JSONParser {
 					break;
 
 				case 't':
-					readNext();// 'r'
-					readNext();// 'u'
-					readNext();// 'e'
+					nextChar();// 'r'
+					nextChar();// 'u'
+					nextChar();// 'e'
 					listener.onBoolean( true );
 					switch( scope.peek() ) {
 						case OBJECT_KEY:
@@ -147,10 +147,10 @@ public class JSONParser {
 					break;
 
 				case 'f':
-					readNext();// 'a'
-					readNext();// 'l'
-					readNext();// 's'
-					readNext();// 'e'
+					nextChar();// 'a'
+					nextChar();// 'l'
+					nextChar();// 's'
+					nextChar();// 'e'
 					listener.onBoolean( false );
 					switch( scope.peek() ) {
 						case OBJECT_KEY:
@@ -161,9 +161,9 @@ public class JSONParser {
 					}
 
 				case 'n':
-					readNext();// 'u'
-					readNext();// 'l'
-					readNext();// 'l'
+					nextChar();// 'u'
+					nextChar();// 'l'
+					nextChar();// 'l'
 					listener.onNull();
 					switch( scope.peek() ) {
 						case OBJECT_KEY:
@@ -221,24 +221,24 @@ public class JSONParser {
 		boolean negative = false;
 		if( c == '-' ) {
 			negative = true;
-			c = readNext();
+			c = nextChar();
 		}
 		while( isDigit( c ) ) {
 			a = a * 10 + ( c - '0' );
-			c = readNext();
+			c = nextChar();
 		}
 		if( c == '.' ) {
-			c = readNext();
+			c = nextChar();
 			while( isDigit( c ) ) {
 				a = a * 10 + ( c - '0' );
 				e--;
-				c = readNext();
+				c = nextChar();
 			}
 		}
 		if( c == 'e' || c == 'E' ) {
 			int sign = 1;
 			int x = 0;
-			c = readNext();
+			c = nextChar();
 			if( c == '+' ) {
 				// Valid
 			} else if( c == '-' ) {
@@ -246,10 +246,10 @@ public class JSONParser {
 			} else {
 				throw new IOException( "Invalid number format" );
 			}
-			c = readNext();
+			c = nextChar();
 			while( isDigit( c ) ) {
 				x = x * 10 + ( c - '0' );
-				c = readNext();
+				c = nextChar();
 			}
 			e += x * sign;
 		}
