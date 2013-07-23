@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import org.junit.Test;
-import org.twuni.jason.JSONParser.JSONEventListener;
 
 public class JSONParserTest {
 
