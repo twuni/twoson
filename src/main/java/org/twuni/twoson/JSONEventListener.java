@@ -1,4 +1,4 @@
-package org.twuni.jason;
+package org.twuni.twoson;
 
 public interface JSONEventListener {
 

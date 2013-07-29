@@ -1,4 +1,4 @@
-package org.twuni.jason;
+package org.twuni.twoson;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

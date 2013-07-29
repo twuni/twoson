@@ -3,12 +3,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.twuni</groupId>
-	<artifactId>jason</artifactId>
+	<artifactId>twoson</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>Jason - The Thinnest JSON Library</name>
-	<url>http://jason.twuni.org</url>
+	<name>Twoson - The Thinnest JSON Library</name>
+	<url>http://twoson.twuni.org</url>
 	
 	<build>
 	    <pluginManagement>
