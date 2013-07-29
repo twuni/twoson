@@ -1,3 +1,3 @@
 # Twoson
 
-The super-thin, super-fast, super-secure low-level JSON generator and parser for Java.
+Twoson is a low-level JSON generator and parser for Java. It boasts a minimal footprint and enhanced security.
