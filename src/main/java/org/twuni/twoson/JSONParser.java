@@ -1,3 +1,25 @@
+/**
+ * The MIT License (MIT)
+ * 
+ * Copyright (c) 2013 Twuni
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 package org.twuni.twoson;
 
 import java.io.IOException;
@@ -6,14 +28,6 @@ import java.util.Stack;
 
 public class JSONParser {
 
-	private final InputStream in;
-	private final JSONEventListener listener;
-
-	public JSONParser( InputStream in, JSONEventListener listener ) {
-		this.in = in;
-		this.listener = listener;
-	}
-
 	private static enum Event {
 		NONE,
 		OBJECT,
@@ -21,10 +35,90 @@ public class JSONParser {
 		OBJECT_KEY
 	}
 
+	private static void burn( byte [] buffer ) {
+		for( int i = 0; i < buffer.length; i++ ) {
+			buffer[i] = 0;
+		}
+	}
+
+	private static void burn( char [] buffer ) {
+		for( int i = 0; i < buffer.length; i++ ) {
+			buffer[i] = 0;
+		}
+	}
+
+	private static boolean isDigit( char c ) {
+		return '0' <= c && c <= '9';
+	}
+
+	private final InputStream in;
+	private final JSONEventListener listener;
 	private byte [] buffer;
 	private int offset;
+
 	private int size;
-	private Stack<Event> scope = new Stack<Event>();
+
+	private final Stack<Event> scope = new Stack<Event>();
+
+	public JSONParser( InputStream in, JSONEventListener listener ) {
+		this.in = in;
+		this.listener = listener;
+	}
+
+	private double atof( char firstDigit ) throws IOException {
+		double a = 0;
+		int e = 0;
+		char c = firstDigit;
+		boolean negative = false;
+		if( c == '-' ) {
+			negative = true;
+			c = nextChar();
+		}
+		while( isDigit( c ) ) {
+			a = a * 10 + ( c - '0' );
+			c = nextChar();
+		}
+		if( c == '.' ) {
+			c = nextChar();
+			while( isDigit( c ) ) {
+				a = a * 10 + ( c - '0' );
+				e--;
+				c = nextChar();
+			}
+		}
+		if( c == 'e' || c == 'E' ) {
+			int sign = 1;
+			int x = 0;
+			c = nextChar();
+			if( c == '+' ) {
+				// Valid
+			} else if( c == '-' ) {
+				sign = -1;
+			} else {
+				throw new IOException( "Invalid number format" );
+			}
+			c = nextChar();
+			while( isDigit( c ) ) {
+				x = x * 10 + c - '0';
+				c = nextChar();
+			}
+			e += x * sign;
+		}
+		while( e > 0 ) {
+			a *= 10;
+			e--;
+		}
+		while( e < 0 ) {
+			a *= 0.1;
+			e++;
+		}
+		offset--;
+		return negative ? -a : a;
+	}
+
+	private boolean isFinished() {
+		return size <= 0;
+	}
 
 	private char nextChar() throws IOException {
 		if( buffer == null ) {
@@ -41,10 +135,6 @@ public class JSONParser {
 		char c = (char) buffer[offset];
 		offset++;
 		return c;
-	}
-
-	private boolean isFinished() {
-		return size <= 0;
 	}
 
 	public void read() throws IOException {
@@ -184,6 +274,7 @@ public class JSONParser {
 							default:
 								break;
 						}
+						break;
 
 					case 'n':
 						nextChar();// 'u'
@@ -197,6 +288,7 @@ public class JSONParser {
 							default:
 								break;
 						}
+						break;
 
 					case '-':
 					case '0':
@@ -237,73 +329,6 @@ public class JSONParser {
 			buffer = null;
 		}
 
-	}
-
-	private static boolean isDigit( char c ) {
-		return '0' <= c && c <= '9';
-	}
-
-	private double atof( char firstDigit ) throws IOException {
-		double a = 0;
-		int e = 0;
-		char c = firstDigit;
-		boolean negative = false;
-		if( c == '-' ) {
-			negative = true;
-			c = nextChar();
-		}
-		while( isDigit( c ) ) {
-			a = a * 10 + ( c - '0' );
-			c = nextChar();
-		}
-		if( c == '.' ) {
-			c = nextChar();
-			while( isDigit( c ) ) {
-				a = a * 10 + ( c - '0' );
-				e--;
-				c = nextChar();
-			}
-		}
-		if( c == 'e' || c == 'E' ) {
-			int sign = 1;
-			int x = 0;
-			c = nextChar();
-			if( c == '+' ) {
-				// Valid
-			} else if( c == '-' ) {
-				sign = -1;
-			} else {
-				throw new IOException( "Invalid number format" );
-			}
-			c = nextChar();
-			while( isDigit( c ) ) {
-				x = x * 10 + ( c - '0' );
-				c = nextChar();
-			}
-			e += x * sign;
-		}
-		while( e > 0 ) {
-			a *= 10;
-			e--;
-		}
-		while( e < 0 ) {
-			a *= 0.1;
-			e++;
-		}
-		offset--;
-		return negative ? -a : a;
-	}
-
-	private static void burn( char [] buffer ) {
-		for( int i = 0; i < buffer.length; i++ ) {
-			buffer[i] = 0;
-		}
-	}
-
-	private static void burn( byte [] buffer ) {
-		for( int i = 0; i < buffer.length; i++ ) {
-			buffer[i] = 0;
-		}
 	}
 
 }

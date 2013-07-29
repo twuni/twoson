@@ -1,3 +1,25 @@
+/**
+ * The MIT License (MIT)
+ * 
+ * Copyright (c) 2013 Twuni
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 package org.twuni.twoson;
 
 import java.io.IOException;
@@ -8,43 +30,41 @@ public class JSONGenerator {
 	private static final byte [] TRUE = "true".getBytes();
 	private static final byte [] FALSE = "false".getBytes();
 	private static final byte [] NULL = "null".getBytes();
-	private OutputStream out;
+
+	private static void burn( char [] buffer ) {
+		for( int i = 0; i < buffer.length; i++ ) {
+			buffer[i] = 0;
+		}
+	}
+
+	private final OutputStream out;
 
 	public JSONGenerator( OutputStream out ) {
 		this.out = out;
-	}
-
-	public void openObject() throws IOException {
-		out.write( '{' );
-	}
-
-	public void openArray() throws IOException {
-		out.write( '[' );
 	}
 
 	public void closeArray() throws IOException {
 		out.write( ']' );
 	}
 
-	public void writeKey( char [] key ) throws IOException {
-		writeCharArray( key );
-		out.write( ':' );
+	public void closeObject() throws IOException {
+		out.write( '}' );
 	}
 
-	public void write( int value ) throws IOException {
-		out.write( Integer.toString( value ).getBytes() );
+	public void next() throws IOException {
+		out.write( ',' );
 	}
 
-	public void writeKey( String key ) throws IOException {
-		writeKey( key.toCharArray() );
+	public void openArray() throws IOException {
+		out.write( '[' );
 	}
 
-	public void writeString( String value ) throws IOException {
-		writeCharArray( value.toCharArray() );
+	public void openObject() throws IOException {
+		out.write( '{' );
 	}
 
-	public void write( long value ) throws IOException {
-		out.write( Long.toString( value ).getBytes() );
+	public void write( boolean value ) throws IOException {
+		out.write( value ? TRUE : FALSE );
 	}
 
 	public void write( double value ) throws IOException {
@@ -53,6 +73,14 @@ public class JSONGenerator {
 
 	public void write( float value ) throws IOException {
 		out.write( Float.toString( value ).getBytes() );
+	}
+
+	public void write( int value ) throws IOException {
+		out.write( Integer.toString( value ).getBytes() );
+	}
+
+	public void write( long value ) throws IOException {
+		out.write( Long.toString( value ).getBytes() );
 	}
 
 	public void writeCharArray( char [] value ) throws IOException {
@@ -81,32 +109,21 @@ public class JSONGenerator {
 		}
 	}
 
+	public void writeKey( char [] key ) throws IOException {
+		writeCharArray( key );
+		out.write( ':' );
+	}
+
+	public void writeKey( String key ) throws IOException {
+		writeKey( key.toCharArray() );
+	}
+
 	public void writeNull() throws IOException {
 		out.write( NULL );
 	}
 
-	public void write( boolean value ) throws IOException {
-		out.write( value ? TRUE : FALSE );
-	}
-
-	public void next() throws IOException {
-		out.write( ',' );
-	}
-
-	public void closeObject() throws IOException {
-		out.write( '}' );
-	}
-
-	private static void burn( char [] buffer ) {
-		for( int i = 0; i < buffer.length; i++ ) {
-			buffer[i] = 0;
-		}
-	}
-
-	private static void burn( byte [] buffer ) {
-		for( int i = 0; i < buffer.length; i++ ) {
-			buffer[i] = 0;
-		}
+	public void writeString( String value ) throws IOException {
+		writeCharArray( value.toCharArray() );
 	}
 
 }
