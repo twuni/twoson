@@ -30,6 +30,8 @@ public class JSONGenerator {
 	private static final byte [] TRUE = "true".getBytes();
 	private static final byte [] FALSE = "false".getBytes();
 	private static final byte [] NULL = "null".getBytes();
+	private static final byte [] INDENT = "    ".getBytes();
+	private static final byte [] NEW_LINE = "\n".getBytes();
 
 	private static void burn( char [] buffer ) {
 		for( int i = 0; i < buffer.length; i++ ) {
@@ -37,30 +39,66 @@ public class JSONGenerator {
 		}
 	}
 
+	private boolean pretty = false;
+	private int indentationLevel;
 	private final OutputStream out;
 
 	public JSONGenerator( OutputStream out ) {
 		this.out = out;
 	}
 
+	public JSONGenerator( OutputStream out, boolean pretty ) {
+		this( out );
+		this.pretty = pretty;
+	}
+
+	public JSONGenerator( OutputStream out, int indentationLevel ) {
+		this( out, true );
+		this.indentationLevel = indentationLevel;
+	}
+
 	public void closeArray() throws IOException {
+		indentationLevel--;
+		newLine();
 		out.write( ']' );
 	}
 
 	public void closeObject() throws IOException {
+		indentationLevel--;
+		newLine();
 		out.write( '}' );
+	}
+
+	public void indent() throws IOException {
+		if( pretty ) {
+			for( int i = 0; i < indentationLevel; i++ ) {
+				out.write( INDENT );
+			}
+		}
+	}
+
+	public void newLine() throws IOException {
+		if( pretty ) {
+			out.write( NEW_LINE );
+			indent();
+		}
 	}
 
 	public void next() throws IOException {
 		out.write( ',' );
+		newLine();
 	}
 
 	public void openArray() throws IOException {
 		out.write( '[' );
+		indentationLevel++;
+		newLine();
 	}
 
 	public void openObject() throws IOException {
 		out.write( '{' );
+		indentationLevel++;
+		newLine();
 	}
 
 	public void write( boolean value ) throws IOException {
@@ -112,6 +150,9 @@ public class JSONGenerator {
 	public void writeKey( char [] key ) throws IOException {
 		writeCharArray( key );
 		out.write( ':' );
+		if( pretty ) {
+			out.write( ' ' );
+		}
 	}
 
 	public void writeKey( String key ) throws IOException {

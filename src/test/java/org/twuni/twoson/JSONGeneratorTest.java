@@ -76,4 +76,27 @@ public class JSONGeneratorTest {
 
 	}
 
+	@Test
+	public void testPrettyPrint() throws IOException {
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		JSONGenerator generator = new JSONGenerator( out, true );
+
+		generator.openObject();
+		generator.writeKey( "open_object" );
+		generator.openObject();
+		generator.writeKey( "number" );
+		generator.write( 12345 );
+		generator.next();
+		generator.writeKey( "letters" );
+		generator.writeString( "This is a good string." );
+		generator.closeObject();
+		generator.closeObject();
+
+		String expected = "{\n    \"open_object\": {\n        \"number\": 12345,\n        \"letters\": \"This is a good string.\"\n    }\n}";
+		String actual = out.toString();
+		Assert.assertEquals( expected, actual );
+
+	}
+
 }
