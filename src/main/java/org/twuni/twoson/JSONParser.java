@@ -215,8 +215,10 @@ public class JSONParser {
 						// FIXME: Read-ahead only works properly if the right anchor exists within
 						// the
 						// buffer
+						int skip = 0;
 						for( j = offset; j < buffer.length; j++ ) {
 							if( buffer[j] == '\\' ) {
+								skip++;
 								j++;
 								continue;
 							}
@@ -224,9 +226,14 @@ public class JSONParser {
 								break;
 							}
 						}
-						char [] string = new char [j - offset];
-						for( int a = 0; a < string.length; a++ ) {
-							string[a] = (char) buffer[offset + a];
+						char [] string = new char [j - offset - skip];
+						skip = 0;
+						for( int a = 0; a < string.length + skip; a++ ) {
+							if( buffer[offset + a] == '\\' ) {
+								skip++;
+								continue;
+							}
+							string[a - skip] = (char) buffer[offset + a];
 						}
 						offset = j + 1;
 						switch( scope.peek() ) {
