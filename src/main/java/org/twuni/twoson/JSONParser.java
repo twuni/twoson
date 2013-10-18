@@ -309,7 +309,8 @@ public class JSONParser {
 					case '8':
 					case '9':
 						double f = atof( c );
-						if( f - (int) f < 0.00001 ) {
+						double d = ( f < 0 ? -1 : 1 ) * ( f - (int) f );
+						if( d < 0.00001 ) {
 							listener.onInteger( (int) f );
 						} else {
 							listener.onFloat( (float) f );
