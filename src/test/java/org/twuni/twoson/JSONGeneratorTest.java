@@ -31,6 +31,24 @@ import org.junit.Test;
 public class JSONGeneratorTest {
 
 	@Test
+	public void testEscapeSequences() throws IOException {
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		JSONGenerator generator = new JSONGenerator( out );
+
+		generator.openObject();
+		generator.writeKey( "a" );
+		generator.writeString( "\"quoted\" \\\"string\\\"\nwith\nline\nbreaks!" );
+		generator.closeObject();
+
+		String expected = "{\"a\":\"\\\"quoted\\\" \\\\\\\"string\\\\\\\"\nwith\nline\nbreaks!\"}";
+		String actual = out.toString();
+		System.out.println( actual );
+		Assert.assertEquals( expected, actual );
+
+	}
+
+	@Test
 	public void testEverything() throws IOException {
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -29,7 +29,7 @@ import org.junit.Test;
 
 public class JSONParserTest {
 
-	private static final byte [] TEST_OBJECT = "{\"a\":\"test\",\"b\":123,\"c\":[1,2,3],\"d\":{\"da\":1,\"db\":\"test\"},\"e\":\"with \\\"quote\\\" in it\"}".getBytes();
+	private static final byte [] TEST_OBJECT = "{\"a\":\"test\",\"b\":123,\"c\":[1,2,3],\"d\":{\"da\":1,\"db\":\"test\"},\"e\":\"with \\\"quote\\\" in it\",\"f\":\"with\nline\nbreaks\"}".getBytes();
 
 	@Test
 	public void testParser() throws IOException {
