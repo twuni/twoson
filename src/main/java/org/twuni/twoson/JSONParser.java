@@ -55,7 +55,6 @@ public class JSONParser {
 	private final JSONEventListener listener;
 	private byte [] buffer;
 	private int offset;
-
 	private int size;
 
 	private final Stack<Event> scope = new Stack<Event>();
@@ -120,7 +119,7 @@ public class JSONParser {
 		return size <= 0;
 	}
 
-	private char nextChar() throws IOException {
+	private void nextChunk() throws IOException {
 		if( buffer == null ) {
 			buffer = new byte [64 * 1024];
 			size = in.read( buffer, 0, buffer.length );
@@ -129,12 +128,32 @@ public class JSONParser {
 			offset = 0;
 			size = in.read( buffer, 0, buffer.length );
 		}
+	}
+
+	private char nextChar() throws IOException {
+		nextChunk();
 		if( isFinished() ) {
 			return '\0';
 		}
-		char c = (char) buffer[offset];
 		offset++;
-		return c;
+		return (char) buffer[offset - 1];
+	}
+
+	private void unexpected( char c ) throws IOException {
+		throw new IllegalFormatException( c, scope.peek().toString() );
+	}
+
+	private void expect( char expected ) throws IOException {
+		char actual = nextChar();
+		if( actual != expected ) {
+			unexpected( actual );
+		}
+	}
+
+	private void expect( String expected ) throws IOException {
+		for( int i = 0; i < expected.length(); i++ ) {
+			expect( expected.charAt( i ) );
+		}
 	}
 
 	public void read() throws IOException {
@@ -161,7 +180,7 @@ public class JSONParser {
 								listener.onEndObject();
 								break;
 							default:
-								throw new IllegalFormatException( c, scope.peek().toString() );
+								unexpected( c );
 						}
 						break;
 
@@ -180,7 +199,7 @@ public class JSONParser {
 								listener.onEndArray();
 								break;
 							default:
-								throw new IllegalFormatException( c, scope.peek().toString() );
+								unexpected( c );
 						}
 						break;
 
@@ -190,7 +209,7 @@ public class JSONParser {
 							case OBJECT:
 								break;
 							default:
-								throw new IllegalFormatException( c, scope.peek().toString() );
+								unexpected( c );
 						}
 						break;
 
@@ -199,7 +218,7 @@ public class JSONParser {
 							case OBJECT_KEY:
 								break;
 							default:
-								throw new IllegalFormatException( c, scope.peek().toString() );
+								unexpected( c );
 						}
 						break;
 
@@ -211,31 +230,65 @@ public class JSONParser {
 						break;
 
 					case '"':
-						int j;
-						// FIXME: Read-ahead only works properly if the right anchor exists within
-						// the
-						// buffer
-						int skip = 0;
-						for( j = offset; j < buffer.length; j++ ) {
-							if( buffer[j] == '\\' ) {
-								skip++;
-								j++;
-								continue;
+
+						// FIXME: Read-ahead only works properly if the right anchor exists within the buffer.
+						// FIXME: A back-slash may precede more than one character, as is the case with Unicode escapes (\u0000).
+
+						boolean terminated = false;
+
+						char [] string = null;
+						int stringOffset = 0;
+
+						while( !terminated ) {
+
+							int j;
+							int skip = 0;
+
+							// Read through the buffer in its entirety until we find a terminator.
+							for( j = offset; j < size; j++ ) {
+								if( buffer[j] == '\\' ) {
+									// Allow back-slashes to escape terminators.
+									skip++;
+									j++;
+									continue;
+								}
+								if( buffer[j] == '"' ) {
+									// We found a non-escaped terminator.
+									terminated = true;
+									break;
+								}
 							}
-							if( buffer[j] == '"' ) {
-								break;
+
+							if( string == null ) {
+								stringOffset = 0;
+								string = new char[j - offset - skip];
+							} else {
+								stringOffset = string.length;
+								char [] _string = new char[stringOffset + (j - offset - skip)];
+								for( int ii = 0; ii < string.length; ii++ ) {
+									_string[ii] = string[ii];
+								}
+								string = _string;
 							}
+
+							skip = 0;
+							for( int a = stringOffset; a < string.length + skip; a++ ) {
+								char b = (char) buffer[offset + a];
+								if( b == '\\' ) {
+									skip++;
+									continue;
+								}
+								string[a - skip] = b;
+							}
+
+							offset = j + 1;
+
+							if( !terminated ) {
+								nextChunk();
+							}
+
 						}
-						char [] string = new char [j - offset - skip];
-						skip = 0;
-						for( int a = 0; a < string.length + skip; a++ ) {
-							if( buffer[offset + a] == '\\' ) {
-								skip++;
-								continue;
-							}
-							string[a - skip] = (char) buffer[offset + a];
-						}
-						offset = j + 1;
+
 						switch( scope.peek() ) {
 							case OBJECT:
 								listener.onObjectKey( string );
@@ -255,9 +308,7 @@ public class JSONParser {
 						break;
 
 					case 't':
-						nextChar();// 'r'
-						nextChar();// 'u'
-						nextChar();// 'e'
+						expect( "rue" );
 						listener.onBoolean( true );
 						switch( scope.peek() ) {
 							case OBJECT_KEY:
@@ -269,10 +320,7 @@ public class JSONParser {
 						break;
 
 					case 'f':
-						nextChar();// 'a'
-						nextChar();// 'l'
-						nextChar();// 's'
-						nextChar();// 'e'
+						expect( "alse" );
 						listener.onBoolean( false );
 						switch( scope.peek() ) {
 							case OBJECT_KEY:
@@ -284,9 +332,7 @@ public class JSONParser {
 						break;
 
 					case 'n':
-						nextChar();// 'u'
-						nextChar();// 'l'
-						nextChar();// 'l'
+						expect( "ull" );
 						listener.onNull();
 						switch( scope.peek() ) {
 							case OBJECT_KEY:
@@ -325,7 +371,7 @@ public class JSONParser {
 						break;
 
 					default:
-						throw new IllegalFormatException( c, scope.peek().toString() );
+						unexpected( c );
 
 				}
 
