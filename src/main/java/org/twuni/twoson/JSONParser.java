@@ -164,6 +164,7 @@ public class JSONParser {
 
 	public void read() throws IOException {
 
+		// TODO: Implement a secure CharArrayWriter.
 		CharArrayWriter writer = new CharArrayWriter();
 
 		try {
@@ -314,6 +315,9 @@ public class JSONParser {
 								burn( string );
 								break;
 						}
+
+						writer.reset();
+
 						break;
 
 					case 't':
