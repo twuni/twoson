@@ -22,6 +22,7 @@
  */
 package org.twuni.twoson;
 
+import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Stack;
@@ -115,34 +116,6 @@ public class JSONParser {
 		return negative ? -a : a;
 	}
 
-	private boolean isFinished() {
-		return size <= 0;
-	}
-
-	private void nextChunk() throws IOException {
-		if( buffer == null ) {
-			buffer = new byte [64 * 1024];
-			size = in.read( buffer, 0, buffer.length );
-		}
-		if( offset >= size ) {
-			offset = 0;
-			size = in.read( buffer, 0, buffer.length );
-		}
-	}
-
-	private char nextChar() throws IOException {
-		nextChunk();
-		if( isFinished() ) {
-			return '\0';
-		}
-		offset++;
-		return (char) buffer[offset - 1];
-	}
-
-	private void unexpected( char c ) throws IOException {
-		throw new IllegalFormatException( c, scope.peek().toString() );
-	}
-
 	private void expect( char expected ) throws IOException {
 		char actual = nextChar();
 		if( actual != expected ) {
@@ -156,7 +129,42 @@ public class JSONParser {
 		}
 	}
 
+	private boolean isFinished() {
+		return size <= 0;
+	}
+
+	private char nextChar() throws IOException {
+		nextChunk();
+		if( isFinished() ) {
+			return '\0';
+		}
+		offset++;
+		return (char) buffer[offset - 1];
+	}
+
+	private void nextChunk() throws IOException {
+		if( buffer == null ) {
+			buffer = new byte [64 * 1024];
+			size = in.read( buffer, 0, buffer.length );
+		}
+		if( offset >= size ) {
+			offset = 0;
+			size = in.read( buffer, 0, buffer.length );
+		}
+	}
+
+	private byte nextHex() throws IOException {
+		char c = nextChar();
+		int hex = Character.digit( c, 16 );
+		if( hex < 0x0 || hex > 0xF ) {
+			unexpected( c );
+		}
+		return (byte) ( 0xF & hex );
+	}
+
 	public void read() throws IOException {
+
+		CharArrayWriter writer = new CharArrayWriter();
 
 		try {
 
@@ -231,63 +239,64 @@ public class JSONParser {
 
 					case '"':
 
-						// FIXME: Read-ahead only works properly if the right anchor exists within the buffer.
-						// FIXME: A back-slash may precede more than one character, as is the case with Unicode escapes (\u0000).
+						writer.reset();
 
-						boolean terminated = false;
+						for( c = nextChar(); c != '"'; c = nextChar() ) {
 
-						char [] string = null;
-						int stringOffset = 0;
+							if( c == '\\' ) {
 
-						while( !terminated ) {
+								c = nextChar();
 
-							int j;
-							int skip = 0;
+								switch( c ) {
 
-							// Read through the buffer in its entirety until we find a terminator.
-							for( j = offset; j < size; j++ ) {
-								if( buffer[j] == '\\' ) {
-									// Allow back-slashes to escape terminators.
-									skip++;
-									j++;
-									continue;
+									case 'b':
+										writer.append( '\b' );
+										break;
+
+									case 'f':
+										writer.append( '\f' );
+										break;
+
+									case 'n':
+										writer.append( '\n' );
+										break;
+
+									case 'r':
+										writer.append( '\r' );
+										break;
+
+									case 't':
+										writer.append( '\t' );
+										break;
+
+									case 'u':
+
+										int u = 0;
+
+										u |= nextHex() << 12;
+										u |= nextHex() << 8;
+										u |= nextHex() << 4;
+										u |= nextHex();
+
+										writer.append( (char) ( 0xFFFF & u ) );
+										break;
+
+									case '"':
+									case '\\':
+									case '/':
+									default:
+										writer.append( c );
+										break;
+
 								}
-								if( buffer[j] == '"' ) {
-									// We found a non-escaped terminator.
-									terminated = true;
-									break;
-								}
-							}
 
-							if( string == null ) {
-								stringOffset = 0;
-								string = new char[j - offset - skip];
 							} else {
-								stringOffset = string.length;
-								char [] _string = new char[stringOffset + (j - offset - skip)];
-								for( int ii = 0; ii < string.length; ii++ ) {
-									_string[ii] = string[ii];
-								}
-								string = _string;
-							}
-
-							skip = 0;
-							for( int a = stringOffset; a < string.length + skip; a++ ) {
-								char b = (char) buffer[offset + a];
-								if( b == '\\' ) {
-									skip++;
-									continue;
-								}
-								string[a - skip] = b;
-							}
-
-							offset = j + 1;
-
-							if( !terminated ) {
-								nextChunk();
+								writer.append( c );
 							}
 
 						}
+
+						char [] string = writer.toCharArray();
 
 						switch( scope.peek() ) {
 							case OBJECT:
@@ -383,6 +392,10 @@ public class JSONParser {
 			buffer = null;
 		}
 
+	}
+
+	private void unexpected( char c ) {
+		throw new IllegalFormatException( c, scope.peek().toString() );
 	}
 
 }
