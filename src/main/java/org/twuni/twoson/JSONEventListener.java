@@ -30,11 +30,11 @@ public interface JSONEventListener {
 
 	public void onBoolean( boolean value );
 
+	public void onDouble( double value );
+
 	public void onEndArray();
 
 	public void onEndObject();
-
-	public void onFloat( float value );
 
 	public void onInteger( int value );
 

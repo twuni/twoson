@@ -372,7 +372,7 @@ public class JSONParser {
 						if( d < 0.00001 ) {
 							listener.onInteger( (int) f );
 						} else {
-							listener.onFloat( (float) f );
+							listener.onDouble( f );
 						}
 						switch( scope.peek() ) {
 							case OBJECT_KEY:

@@ -25,71 +25,43 @@ package org.twuni.twoson;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import org.junit.Assert;
 import org.junit.Test;
 
-public class JSONParserTest {
+public class JSONParserTest extends Assert {
 
-	private static final byte [] TEST_OBJECT = "{\"a\":\"test\",\"b\":123,\"c\":[1,2,3],\"d\":{\"da\":1,\"db\":\"test\"},\"e\":\"with \\\"quote\\\" in it\",\"f\":\"with\nline\nbreaks\",\"g\":\"with \\u003cb\\u003eUnicode\\u003c/b\\u003e\",\"h\":\"with\\nescaped\\nline\\nbreaks\"}".getBytes();
+	private static final byte [] TEST_OBJECT = "{\"a\":\"test\",\"b\":123,\"c\":[1,2,3],\"d\":{\"da\":1,\"db\":\"test\"},\"e\":\"with \\\"quote\\\" in it\",\"f\":\"with\nline\nbreaks\",\"g\":\"with \\u003cb\\u003eUnicode\\u003c/b\\u003e\",\"h\":\"with\\nescaped\\nline\\nbreaks\",\"i\":123.456}".getBytes();
+
+	protected boolean pass;
 
 	@Test
-	public void testParser() throws IOException {
+	public void read_onString_shouldCorrectlyParseEscapedLineBreaks() throws IOException {
 
-		JSONParser parser = new JSONParser( new ByteArrayInputStream( TEST_OBJECT ), new JSONEventListener() {
+		String input = "{\"a\":\".\\n.\"}";
+		final String expected = ".\n.";
 
-			@Override
-			public void onBeginArray() {
-				System.out.println( "#onBeginArray" );
-			}
+		ByteArrayInputStream in = new ByteArrayInputStream( input.getBytes() );
 
-			@Override
-			public void onBeginObject() {
-				System.out.println( "#onBeginObject" );
-			}
-
-			@Override
-			public void onBoolean( boolean value ) {
-				System.out.println( "#onBoolean value:" + Boolean.toString( value ) );
-			}
-
-			@Override
-			public void onEndArray() {
-				System.out.println( "#onEndArray" );
-			}
-
-			@Override
-			public void onEndObject() {
-				System.out.println( "#onEndObject" );
-			}
-
-			@Override
-			public void onFloat( float value ) {
-				System.out.println( "#onFloat value:" + Float.toString( value ) );
-			}
-
-			@Override
-			public void onInteger( int value ) {
-				System.out.println( "#onInteger value:" + Integer.toString( value ) );
-			}
-
-			@Override
-			public void onNull() {
-				System.out.println( "#onNull" );
-			}
-
-			@Override
-			public void onObjectKey( char [] value ) {
-				System.out.println( "#onObjectKey key:" + new String( value ) );
-			}
+		JSONEventListener listener = new BaseJSONEventListener() {
 
 			@Override
 			public void onString( char [] value ) {
-				System.out.println( "#onString value:" + new String( value ) );
+				assertEquals( expected, new String( value ) );
+				pass = true;
 			}
 
-		} );
+		};
 
-		parser.read();
+		pass = false;
+		new JSONParser( in, listener ).read();
+		assertTrue( pass );
 
+	}
+
+	@Test
+	public void testParser() throws IOException {
+		ByteArrayInputStream input = new ByteArrayInputStream( TEST_OBJECT );
+		new JSONParser( input, new LoggingJSONEventListener() ).read();
 	}
 
 }
