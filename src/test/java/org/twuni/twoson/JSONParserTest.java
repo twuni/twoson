@@ -42,7 +42,7 @@ public class JSONParserTest extends Assert {
 
 			@Override
 			public void onString( char [] value ) {
-				assertArrayEquals( expected.toCharArray(), value );
+				assertEquals( expected, new String( value ) );
 				pass = true;
 			}
 
@@ -61,7 +61,7 @@ public class JSONParserTest extends Assert {
 
 	@Test
 	public void read_onString_shouldCorrectlyParseUnicodeCharacters() throws IOException {
-		assertStringValueEquals( "{\"a\":\"__Ǥ__\"}", "__Ǥ__" );
+		assertStringValueEquals( "{\"a\":\"Ǥ😀\"}", "Ǥ😀" );
 	}
 
 	@Test

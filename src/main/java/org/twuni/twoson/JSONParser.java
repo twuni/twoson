@@ -25,6 +25,8 @@ package org.twuni.twoson;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Stack;
 
 public class JSONParser {
@@ -35,6 +37,8 @@ public class JSONParser {
 		ARRAY,
 		OBJECT_KEY
 	}
+
+	private static final Charset UTF8 = Charset.forName( "UTF-8" );
 
 	private static void burn( byte [] buffer ) {
 		for( int i = 0; i < buffer.length; i++ ) {
@@ -72,24 +76,24 @@ public class JSONParser {
 		boolean negative = false;
 		if( c == '-' ) {
 			negative = true;
-			c = nextChar();
+			c = nextCharUTF8();
 		}
 		while( isDigit( c ) ) {
 			a = a * 10 + ( c - '0' );
-			c = nextChar();
+			c = nextCharUTF8();
 		}
 		if( c == '.' ) {
-			c = nextChar();
+			c = nextCharUTF8();
 			while( isDigit( c ) ) {
 				a = a * 10 + ( c - '0' );
 				e--;
-				c = nextChar();
+				c = nextCharUTF8();
 			}
 		}
 		if( c == 'e' || c == 'E' ) {
 			int sign = 1;
 			int x = 0;
-			c = nextChar();
+			c = nextCharUTF8();
 			if( c == '+' ) {
 				// Valid
 			} else if( c == '-' ) {
@@ -97,10 +101,10 @@ public class JSONParser {
 			} else {
 				throw new IOException( "Invalid number format" );
 			}
-			c = nextChar();
+			c = nextCharUTF8();
 			while( isDigit( c ) ) {
 				x = x * 10 + c - '0';
-				c = nextChar();
+				c = nextCharUTF8();
 			}
 			e += x * sign;
 		}
@@ -117,7 +121,7 @@ public class JSONParser {
 	}
 
 	private void expect( char expected ) throws IOException {
-		char actual = nextChar();
+		char actual = nextCharUTF8();
 		if( actual != expected ) {
 			unexpected( actual );
 		}
@@ -142,32 +146,110 @@ public class JSONParser {
 		return buffer[offset - 1];
 	}
 
-	private char nextChar() throws IOException {
+	private byte nextByte( byte [] buffer, int position ) throws IOException {
+		byte b = nextByte();
+		buffer[position] = b;
+		return b;
+	}
+
+	/**
+	 * This method has a fundamental problem with UTF-8 encoded characters that exceed two bytes,
+	 * because in Java, a 'char' primitive is only two bytes wide.
+	 * 
+	 * @return the next character in the stream, decoded in UTF-8 form.
+	 * @throws IOException
+	 * @throws IllegalStateException
+	 *             if the decoded UTF-8 character is too wide to be returned as a 'char' primitive.
+	 * @deprecated Use {@link #nextCharUTF8(byte[])} instead for full UTF-8 support.
+	 */
+	@Deprecated
+	private char nextCharUTF8() throws IOException {
 
 		byte a = nextByte();
+		int out = a;
 
 		if( 0 <= a && a < 0x80 ) {
-			return (char) a;
+			return (char) out;
 		}
 
 		byte M = (byte) 0;
 
 		M = (byte) 0xF0;
 		if( ( a & M ^ M ) == 0 ) {
-			return (char) ( ( a & ~M ) << 18 | (byte) ( nextByte() & ~0xC0 ) << 12 | (byte) ( nextByte() & ~0xC0 ) << 6 | (byte) ( nextByte() & ~0xC0 ) );
+			throw new IllegalStateException( "UTF-8 character too wide for 'char' primitive." );
 		}
 
 		M = (byte) 0xE0;
 		if( ( a & M ^ M ) == 0 ) {
-			return (char) ( ( a & ~M ) << 12 | (byte) ( nextByte() & ~0xC0 ) << 6 | (byte) ( nextByte() & ~0xC0 ) );
+			byte b = (byte) ( nextByte() & ~0xC0 );
+			byte c = (byte) ( nextByte() & ~0xC0 );
+			out = ( a & 0x0F ) << 12 | b << 6 | c;
+			return (char) out;
 		}
 
 		M = (byte) 0xC0;
 		if( ( a & M ^ M ) == 0 ) {
-			return (char) ( ( a & ~M ) << 6 | (byte) ( nextByte() & ~0xC0 ) );
+			byte b = (byte) ( nextByte() & ~0xC0 );
+			out = ( a & 0x1F ) << 6 | b;
+			return (char) out;
 		}
 
-		return (char) a;
+		return (char) out;
+
+	}
+
+	private int nextCharUTF8( byte [] buffer ) throws IOException {
+		return nextCharUTF8( buffer, 0 );
+	}
+
+	/**
+	 * @param buffer
+	 *            the buffer into which to read the UTF-8 bytes.
+	 * @param offset
+	 *            the position in the buffer wherein to read the bytes
+	 * @return the number of decoded bytes
+	 * @throws IOException
+	 * @throws IndexOutOfBoundsException
+	 *             if the buffer is not large enough to hold the UTF-8 bytes.
+	 */
+	private int nextCharUTF8( byte [] buffer, int offset ) throws IOException {
+
+		byte b = (byte) 0;
+		byte M = (byte) 0;
+
+		b = nextByte( buffer, offset + 0 );
+
+		if( 0 <= b && b < 0x80 ) {
+			return 1;
+		}
+
+		M = (byte) 0xF0;
+
+		if( ( b & M ^ M ) == 0 ) {
+
+			nextByte( buffer, offset + 1 );
+			nextByte( buffer, offset + 2 );
+			nextByte( buffer, offset + 3 );
+
+			return 4;
+
+		}
+
+		M = (byte) 0xE0;
+
+		if( ( b & M ^ M ) == 0 ) {
+			nextByte( buffer, offset + 1 );
+			nextByte( buffer, offset + 2 );
+			return 3;
+		}
+
+		M = (byte) 0xC0;
+		if( ( b & M ^ M ) == 0 ) {
+			nextByte( buffer, offset + 1 );
+			return 2;
+		}
+
+		return 1;
 
 	}
 
@@ -183,7 +265,7 @@ public class JSONParser {
 	}
 
 	private byte nextHex() throws IOException {
-		char c = nextChar();
+		char c = nextCharUTF8();
 		int hex = Character.digit( c, 16 );
 		if( hex < 0x0 || hex > 0xF ) {
 			unexpected( c );
@@ -193,13 +275,15 @@ public class JSONParser {
 
 	public void read() throws IOException {
 
+		byte [] utf8 = new byte [6];
+
 		// TODO: Implement a secure CharArrayWriter.
 		CharArrayWriter writer = new CharArrayWriter();
 
 		try {
 
 			scope.push( Event.NONE );
-			for( char c = nextChar(); c != '\0'; c = nextChar() ) {
+			for( char c = nextCharUTF8(); c != '\0'; c = nextCharUTF8() ) {
 
 				switch( c ) {
 
@@ -271,60 +355,85 @@ public class JSONParser {
 
 						writer.reset();
 
-						for( c = nextChar(); c != '"'; c = nextChar() ) {
+						boolean end = false;
 
-							if( c == '\\' ) {
+						do {
 
-								c = nextChar();
+							int width = nextCharUTF8( utf8 );
 
-								switch( c ) {
+							switch( width ) {
 
-									case 'b':
-										writer.append( '\b' );
+								case 1:
+
+									c = (char) utf8[0];
+
+									if( c == '"' ) {
+										end = true;
 										break;
+									}
 
-									case 'f':
-										writer.append( '\f' );
-										break;
+									if( c == '\\' ) {
 
-									case 'n':
-										writer.append( '\n' );
-										break;
+										c = nextCharUTF8();
 
-									case 'r':
-										writer.append( '\r' );
-										break;
+										switch( c ) {
 
-									case 't':
-										writer.append( '\t' );
-										break;
+											case 'b':
+												writer.append( '\b' );
+												break;
 
-									case 'u':
+											case 'f':
+												writer.append( '\f' );
+												break;
 
-										int u = 0;
+											case 'n':
+												writer.append( '\n' );
+												break;
 
-										u |= nextHex() << 12;
-										u |= nextHex() << 8;
-										u |= nextHex() << 4;
-										u |= nextHex();
+											case 'r':
+												writer.append( '\r' );
+												break;
 
-										writer.append( (char) ( 0xFFFF & u ) );
-										break;
+											case 't':
+												writer.append( '\t' );
+												break;
 
-									case '"':
-									case '\\':
-									case '/':
-									default:
+											case 'u':
+
+												int u = 0;
+
+												// FIXME: This assumes uXXXX format and does not
+												// take into
+												// account unicode sequences exceeding two bytes.
+												u |= nextHex() << 12;
+												u |= nextHex() << 8;
+												u |= nextHex() << 4;
+												u |= nextHex();
+
+												writer.append( (char) ( 0xFFFF & u ) );
+												break;
+
+											case '"':
+											case '\\':
+											case '/':
+											default:
+												writer.append( c );
+												break;
+
+										}
+
+									} else {
 										writer.append( c );
-										break;
+									}
 
-								}
+									break;
 
-							} else {
-								writer.append( c );
+								default:
+									writer.append( UTF8.decode( ByteBuffer.wrap( utf8, 0, width ) ) );
+									break;
 							}
 
-						}
+						} while( !end );
 
 						char [] string = writer.toCharArray();
 
