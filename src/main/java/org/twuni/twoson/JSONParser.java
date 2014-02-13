@@ -402,9 +402,6 @@ public class JSONParser {
 
 												int u = 0;
 
-												// FIXME: This assumes uXXXX format and does not
-												// take into
-												// account unicode sequences exceeding two bytes.
 												u |= nextHex() << 12;
 												u |= nextHex() << 8;
 												u |= nextHex() << 4;
