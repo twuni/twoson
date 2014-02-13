@@ -34,19 +34,15 @@ public class JSONParserTest extends Assert {
 
 	protected boolean pass;
 
-	@Test
-	public void read_onString_shouldCorrectlyParseEscapedLineBreaks() throws IOException {
+	private void assertStringValueEquals( String json, final String expected ) throws IOException {
 
-		String input = "{\"a\":\".\\n.\"}";
-		final String expected = ".\n.";
-
-		ByteArrayInputStream in = new ByteArrayInputStream( input.getBytes() );
+		ByteArrayInputStream in = new ByteArrayInputStream( json.getBytes( "UTF-8" ) );
 
 		JSONEventListener listener = new BaseJSONEventListener() {
 
 			@Override
 			public void onString( char [] value ) {
-				assertEquals( expected, new String( value ) );
+				assertArrayEquals( expected.toCharArray(), value );
 				pass = true;
 			}
 
@@ -56,6 +52,16 @@ public class JSONParserTest extends Assert {
 		new JSONParser( in, listener ).read();
 		assertTrue( pass );
 
+	}
+
+	@Test
+	public void read_onString_shouldCorrectlyParseEscapedLineBreaks() throws IOException {
+		assertStringValueEquals( "{\"a\":\".\\n.\"}", ".\n." );
+	}
+
+	@Test
+	public void read_onString_shouldCorrectlyParseUnicodeCharacters() throws IOException {
+		assertStringValueEquals( "{\"a\":\"__Ǥ__\"}", "__Ǥ__" );
 	}
 
 	@Test

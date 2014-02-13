@@ -133,13 +133,42 @@ public class JSONParser {
 		return size <= 0;
 	}
 
-	private char nextChar() throws IOException {
+	private byte nextByte() throws IOException {
 		nextChunk();
 		if( isFinished() ) {
-			return '\0';
+			return 0;
 		}
 		offset++;
-		return (char) buffer[offset - 1];
+		return buffer[offset - 1];
+	}
+
+	private char nextChar() throws IOException {
+
+		byte a = nextByte();
+
+		if( 0 <= a && a < 0x80 ) {
+			return (char) a;
+		}
+
+		byte M = (byte) 0;
+
+		M = (byte) 0xF0;
+		if( ( a & M ^ M ) == 0 ) {
+			return (char) ( ( a & ~M ) << 18 | (byte) ( nextByte() & ~0xC0 ) << 12 | (byte) ( nextByte() & ~0xC0 ) << 6 | (byte) ( nextByte() & ~0xC0 ) );
+		}
+
+		M = (byte) 0xE0;
+		if( ( a & M ^ M ) == 0 ) {
+			return (char) ( ( a & ~M ) << 12 | (byte) ( nextByte() & ~0xC0 ) << 6 | (byte) ( nextByte() & ~0xC0 ) );
+		}
+
+		M = (byte) 0xC0;
+		if( ( a & M ^ M ) == 0 ) {
+			return (char) ( ( a & ~M ) << 6 | (byte) ( nextByte() & ~0xC0 ) );
+		}
+
+		return (char) a;
+
 	}
 
 	private void nextChunk() throws IOException {
