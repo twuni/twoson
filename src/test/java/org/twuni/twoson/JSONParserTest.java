@@ -22,52 +22,20 @@
  */
 package org.twuni.twoson;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-public class JSONParserTest extends Assert {
-
-	private static final byte [] TEST_OBJECT = "{\"a\":\"test\",\"b\":123,\"c\":[1,2,3],\"d\":{\"da\":1,\"db\":\"test\"},\"e\":\"with \\\"quote\\\" in it\",\"f\":\"with\nline\nbreaks\",\"g\":\"with \\u003cb\\u003eUnicode\\u003c/b\\u003e\",\"h\":\"with\\nescaped\\nline\\nbreaks\",\"i\":123.456}".getBytes();
-
-	protected boolean pass;
-
-	private void assertStringValueEquals( String json, final String expected ) throws IOException {
-
-		ByteArrayInputStream in = new ByteArrayInputStream( json.getBytes( "UTF-8" ) );
-
-		JSONEventListener listener = new BaseJSONEventListener() {
-
-			@Override
-			public void onString( byte [] value ) {
-				assertEquals( expected, new String( value ) );
-				pass = true;
-			}
-
-		};
-
-		pass = false;
-		new JSONParser( in, listener ).read();
-		assertTrue( pass );
-
-	}
+public class JSONParserTest extends TestFixture {
 
 	@Test
 	public void read_onString_shouldCorrectlyParseEscapedLineBreaks() throws IOException {
-		assertStringValueEquals( "{\"a\":\".\\n.\"}", ".\n." );
+		expectString( "{\"a\":\".\\n.\"}", ".\n." );
 	}
 
 	@Test
 	public void read_onString_shouldCorrectlyParseUnicodeCharacters() throws IOException {
-		assertStringValueEquals( "{\"a\":\"Ǥ😀\"}", "Ǥ😀" );
-	}
-
-	@Test
-	public void testParser() throws IOException {
-		ByteArrayInputStream input = new ByteArrayInputStream( TEST_OBJECT );
-		new JSONParser( input, new LoggingJSONEventListener() ).read();
+		expectString( "{\"a\":\"Ǥ😀\"}", "Ǥ😀" );
 	}
 
 }

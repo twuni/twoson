@@ -22,9 +22,11 @@
  */
 package org.twuni.twoson;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Stack;
 
 public class JSONParser {
@@ -44,6 +46,41 @@ public class JSONParser {
 
 	private static boolean isDigit( byte c ) {
 		return '0' <= c && c <= '9';
+	}
+
+	public static void parse( byte [] in, int offset, int length, JSONEventListener listener ) throws IOException {
+		if( in != null ) {
+			parse( new ByteArrayInputStream( in, offset, length ), listener );
+		}
+	}
+
+	public static void parse( byte [] in, JSONEventListener listener ) throws IOException {
+		if( in != null ) {
+			parse( new ByteArrayInputStream( in ), listener );
+		}
+	}
+
+	public static void parse( InputStream in, JSONEventListener listener ) throws IOException {
+		if( in != null ) {
+			new JSONParser( in, listener ).read();
+		}
+	}
+
+	public static void parse( String json, JSONEventListener listener ) throws IOException {
+		if( json != null ) {
+			parse( toByteArray( json ), listener );
+		}
+	}
+
+	private static byte [] toByteArray( String string ) {
+		if( string == null ) {
+			return null;
+		}
+		try {
+			return string.getBytes( "UTF-8" );
+		} catch( UnsupportedEncodingException exception ) {
+			return string.getBytes();
+		}
 	}
 
 	private final InputStream in;
