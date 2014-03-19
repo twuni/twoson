@@ -43,12 +43,12 @@ public class BaseJSONEventListener implements JSONEventListener {
 	}
 
 	@Override
-	public void onObjectKey( char [] value ) {
+	public void onObjectKey( byte [] value ) {
 		// By default, do nothing.
 	}
 
 	@Override
-	public void onString( char [] value ) {
+	public void onString( byte [] value ) {
 		// By default, do nothing.
 	}
 

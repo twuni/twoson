@@ -22,11 +22,9 @@
  */
 package org.twuni.twoson;
 
-import java.io.CharArrayWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.Stack;
 
 public class JSONParser {
@@ -38,21 +36,13 @@ public class JSONParser {
 		OBJECT_KEY
 	}
 
-	private static final Charset UTF8 = Charset.forName( "UTF-8" );
-
 	private static void burn( byte [] buffer ) {
 		for( int i = 0; i < buffer.length; i++ ) {
 			buffer[i] = 0;
 		}
 	}
 
-	private static void burn( char [] buffer ) {
-		for( int i = 0; i < buffer.length; i++ ) {
-			buffer[i] = 0;
-		}
-	}
-
-	private static boolean isDigit( char c ) {
+	private static boolean isDigit( byte c ) {
 		return '0' <= c && c <= '9';
 	}
 
@@ -69,31 +59,31 @@ public class JSONParser {
 		this.listener = listener;
 	}
 
-	private double atof( char firstDigit ) throws IOException {
+	private double atof( byte firstDigit ) throws IOException {
 		double a = 0;
 		int e = 0;
-		char c = firstDigit;
+		byte c = firstDigit;
 		boolean negative = false;
 		if( c == '-' ) {
 			negative = true;
-			c = nextCharUTF8();
+			c = nextByte();
 		}
 		while( isDigit( c ) ) {
 			a = a * 10 + ( c - '0' );
-			c = nextCharUTF8();
+			c = nextByte();
 		}
 		if( c == '.' ) {
-			c = nextCharUTF8();
+			c = nextByte();
 			while( isDigit( c ) ) {
 				a = a * 10 + ( c - '0' );
 				e--;
-				c = nextCharUTF8();
+				c = nextByte();
 			}
 		}
 		if( c == 'e' || c == 'E' ) {
 			int sign = 1;
 			int x = 0;
-			c = nextCharUTF8();
+			c = nextByte();
 			if( c == '+' ) {
 				// Valid
 			} else if( c == '-' ) {
@@ -101,10 +91,10 @@ public class JSONParser {
 			} else {
 				throw new IOException( "Invalid number format" );
 			}
-			c = nextCharUTF8();
+			c = nextByte();
 			while( isDigit( c ) ) {
 				x = x * 10 + c - '0';
-				c = nextCharUTF8();
+				c = nextByte();
 			}
 			e += x * sign;
 		}
@@ -120,8 +110,8 @@ public class JSONParser {
 		return negative ? -a : a;
 	}
 
-	private void expect( char expected ) throws IOException {
-		char actual = nextCharUTF8();
+	private void expect( byte expected ) throws IOException {
+		byte actual = nextByte();
 		if( actual != expected ) {
 			unexpected( actual );
 		}
@@ -129,7 +119,7 @@ public class JSONParser {
 
 	private void expect( String expected ) throws IOException {
 		for( int i = 0; i < expected.length(); i++ ) {
-			expect( expected.charAt( i ) );
+			expect( (byte) expected.charAt( i ) );
 		}
 	}
 
@@ -150,52 +140,6 @@ public class JSONParser {
 		byte b = nextByte();
 		buffer[position] = b;
 		return b;
-	}
-
-	/**
-	 * This method has a fundamental problem with UTF-8 encoded characters that exceed two bytes,
-	 * because in Java, a 'char' primitive is only two bytes wide.
-	 * 
-	 * @return the next character in the stream, decoded in UTF-8 form.
-	 * @throws IOException
-	 * @throws IllegalStateException
-	 *             if the decoded UTF-8 character is too wide to be returned as a 'char' primitive.
-	 * @deprecated Use {@link #nextCharUTF8(byte[])} instead for full UTF-8 support.
-	 */
-	@Deprecated
-	private char nextCharUTF8() throws IOException {
-
-		byte a = nextByte();
-		int out = a;
-
-		if( 0 <= a && a < 0x80 ) {
-			return (char) out;
-		}
-
-		byte M = (byte) 0;
-
-		M = (byte) 0xF0;
-		if( ( a & M ^ M ) == 0 ) {
-			throw new IllegalStateException( "UTF-8 character too wide for 'char' primitive." );
-		}
-
-		M = (byte) 0xE0;
-		if( ( a & M ^ M ) == 0 ) {
-			byte b = (byte) ( nextByte() & ~0xC0 );
-			byte c = (byte) ( nextByte() & ~0xC0 );
-			out = ( a & 0x0F ) << 12 | b << 6 | c;
-			return (char) out;
-		}
-
-		M = (byte) 0xC0;
-		if( ( a & M ^ M ) == 0 ) {
-			byte b = (byte) ( nextByte() & ~0xC0 );
-			out = ( a & 0x1F ) << 6 | b;
-			return (char) out;
-		}
-
-		return (char) out;
-
 	}
 
 	private int nextCharUTF8( byte [] buffer ) throws IOException {
@@ -265,7 +209,7 @@ public class JSONParser {
 	}
 
 	private byte nextHex() throws IOException {
-		char c = nextCharUTF8();
+		byte c = nextByte();
 		int hex = Character.digit( c, 16 );
 		if( hex < 0x0 || hex > 0xF ) {
 			unexpected( c );
@@ -277,13 +221,12 @@ public class JSONParser {
 
 		byte [] utf8 = new byte [6];
 
-		// TODO: Implement a secure CharArrayWriter.
-		CharArrayWriter writer = new CharArrayWriter();
+		ByteArrayOutputStream writer = new ByteArrayOutputStream();
 
 		try {
 
 			scope.push( Event.NONE );
-			for( char c = nextCharUTF8(); c != '\0'; c = nextCharUTF8() ) {
+			for( byte c = nextByte(); c != '\0'; c = nextByte() ) {
 
 				switch( c ) {
 
@@ -365,7 +308,7 @@ public class JSONParser {
 
 								case 1:
 
-									c = (char) utf8[0];
+									c = utf8[0];
 
 									if( c == '"' ) {
 										end = true;
@@ -374,65 +317,69 @@ public class JSONParser {
 
 									if( c == '\\' ) {
 
-										c = nextCharUTF8();
+										c = nextByte();
 
 										switch( c ) {
 
 											case 'b':
-												writer.append( '\b' );
+												writer.write( '\b' );
 												break;
 
 											case 'f':
-												writer.append( '\f' );
+												writer.write( '\f' );
 												break;
 
 											case 'n':
-												writer.append( '\n' );
+												writer.write( '\n' );
 												break;
 
 											case 'r':
-												writer.append( '\r' );
+												writer.write( '\r' );
 												break;
 
 											case 't':
-												writer.append( '\t' );
+												writer.write( '\t' );
 												break;
 
 											case 'u':
 
 												int u = 0;
 
-												u |= nextHex() << 12;
-												u |= nextHex() << 8;
-												u |= nextHex() << 4;
+												u = nextHex() << 4;
 												u |= nextHex();
 
-												writer.append( (char) ( 0xFFFF & u ) );
+												writer.write( 0xFF & u );
+
+												u = nextHex() << 4;
+												u |= nextHex();
+
+												writer.write( 0xFF & u );
+
 												break;
 
 											case '"':
 											case '\\':
 											case '/':
 											default:
-												writer.append( c );
+												writer.write( c );
 												break;
 
 										}
 
 									} else {
-										writer.append( c );
+										writer.write( c );
 									}
 
 									break;
 
 								default:
-									writer.append( UTF8.decode( ByteBuffer.wrap( utf8, 0, width ) ) );
+									writer.write( utf8, 0, width );
 									break;
 							}
 
 						} while( !end );
 
-						char [] string = writer.toCharArray();
+						byte [] string = writer.toByteArray();
 
 						switch( scope.peek() ) {
 							case OBJECT:
@@ -533,7 +480,7 @@ public class JSONParser {
 
 	}
 
-	private void unexpected( char c ) {
+	private void unexpected( byte c ) {
 		throw new IllegalFormatException( c, scope.peek().toString() );
 	}
 

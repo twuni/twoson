@@ -41,7 +41,7 @@ public class JSONParserTest extends Assert {
 		JSONEventListener listener = new BaseJSONEventListener() {
 
 			@Override
-			public void onString( char [] value ) {
+			public void onString( byte [] value ) {
 				assertEquals( expected, new String( value ) );
 				pass = true;
 			}

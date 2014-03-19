@@ -47,13 +47,13 @@ public class LoggingJSONEventListener implements JSONEventListener {
 	}
 
 	@Override
-	public void onObjectKey( char [] value ) {
-		log( "#onObjectKey key:%s", String.valueOf( value ) );
+	public void onObjectKey( byte [] value ) {
+		log( "#onObjectKey key:%s", new String( value ) );
 	}
 
 	@Override
-	public void onString( char [] value ) {
-		log( "#onString value:%s", String.valueOf( value ) );
+	public void onString( byte [] value ) {
+		log( "#onString value:%s", new String( value ) );
 	}
 
 }

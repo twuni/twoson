@@ -40,8 +40,8 @@ public interface JSONEventListener {
 
 	public void onNull();
 
-	public void onObjectKey( char [] value );
+	public void onObjectKey( byte [] value );
 
-	public void onString( char [] value );
+	public void onString( byte [] value );
 
 }

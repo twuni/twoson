@@ -26,8 +26,8 @@ public class IllegalFormatException extends IllegalStateException {
 
 	private static final long serialVersionUID = 1L;
 
-	public IllegalFormatException( char c, String state ) {
-		super( "illegal character '" + c + "' for state " + state );
+	public IllegalFormatException( byte c, String state ) {
+		super( "illegal character '" + Character.valueOf( (char) c ) + "' for state " + state );
 	}
 
 }
