@@ -26,7 +26,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Stack;
 
 public class JSONParser {
@@ -68,18 +67,7 @@ public class JSONParser {
 
 	public static void parse( String json, JSONEventListener listener ) throws IOException {
 		if( json != null ) {
-			parse( toByteArray( json ), listener );
-		}
-	}
-
-	private static byte [] toByteArray( String string ) {
-		if( string == null ) {
-			return null;
-		}
-		try {
-			return string.getBytes( "UTF-8" );
-		} catch( UnsupportedEncodingException exception ) {
-			return string.getBytes();
+			parse( JSONUtils.toByteArray( json ), listener );
 		}
 	}
 

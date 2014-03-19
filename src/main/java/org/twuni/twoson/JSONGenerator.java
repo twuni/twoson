@@ -24,19 +24,18 @@ package org.twuni.twoson;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 public class JSONGenerator {
 
-	private static final byte [] TRUE = "true".getBytes();
-	private static final byte [] FALSE = "false".getBytes();
-	private static final byte [] NULL = "null".getBytes();
-	private static final byte [] INDENT = "    ".getBytes();
-	private static final byte [] NEW_LINE = "\n".getBytes();
+	private static final byte [] TRUE = JSONUtils.toByteArray( "true" );
+	private static final byte [] FALSE = JSONUtils.toByteArray( "false" );
+	private static final byte [] NULL = JSONUtils.toByteArray( "null" );
+	private static final byte [] INDENT = JSONUtils.toByteArray( "    " );
+	private static final byte [] NEW_LINE = JSONUtils.toByteArray( "\n" );
 
-	private static void burn( char [] buffer ) {
-		for( int i = 0; i < buffer.length; i++ ) {
-			buffer[i] = 0;
-		}
+	private static void burn( byte [] buffer ) {
+		Arrays.fill( buffer, (byte) 0 );
 	}
 
 	private boolean pretty = false;
@@ -121,18 +120,54 @@ public class JSONGenerator {
 		out.write( Long.toString( value ).getBytes() );
 	}
 
-	public void writeCharArray( char [] value ) throws IOException {
-		writeCharArray( value, true );
+	public void writeKey( byte [] key ) throws IOException {
+		writeString( key );
+		out.write( ':' );
+		if( pretty ) {
+			out.write( ' ' );
+		}
 	}
 
-	public void writeCharArray( char [] value, boolean burnAfterwards ) throws IOException {
+	public void writeKey( String key ) throws IOException {
+		writeKey( JSONUtils.toByteArray( key ) );
+	}
+
+	public void writeNull() throws IOException {
+		out.write( NULL );
+	}
+
+	public void writeString( byte [] value ) throws IOException {
+		if( value != null ) {
+			writeString( value, true );
+		} else {
+			writeNull();
+		}
+	}
+
+	public void writeString( byte [] value, boolean burnAfterwards ) throws IOException {
+		if( value != null ) {
+			writeString( value, 0, value.length, burnAfterwards );
+		} else {
+			writeNull();
+		}
+	}
+
+	public void writeString( byte [] value, int offset, int length ) throws IOException {
+		if( value != null ) {
+			writeString( value, offset, length, true );
+		} else {
+			writeNull();
+		}
+	}
+
+	public void writeString( byte [] value, int offset, int length, boolean burnAfterwards ) throws IOException {
 		if( value == null ) {
 			writeNull();
 			return;
 		}
 		out.write( '"' );
-		for( int i = 0; i < value.length; i++ ) {
-			char c = value[i];
+		for( int i = offset; i < length; i++ ) {
+			byte c = value[i];
 			switch( c ) {
 				case '"':
 				case '\\':
@@ -147,24 +182,8 @@ public class JSONGenerator {
 		}
 	}
 
-	public void writeKey( char [] key ) throws IOException {
-		writeCharArray( key );
-		out.write( ':' );
-		if( pretty ) {
-			out.write( ' ' );
-		}
-	}
-
-	public void writeKey( String key ) throws IOException {
-		writeKey( key.toCharArray() );
-	}
-
-	public void writeNull() throws IOException {
-		out.write( NULL );
-	}
-
 	public void writeString( String value ) throws IOException {
-		writeCharArray( value.toCharArray() );
+		writeString( JSONUtils.toByteArray( value ) );
 	}
 
 }
