@@ -65,6 +65,16 @@ public class JSONParser {
 		}
 	}
 
+	public static JSONValue parse( String json ) {
+		try {
+			JSONValueBuilder listener = new JSONValueBuilder();
+			JSONParser.parse( json, listener );
+			return listener.getResult();
+		} catch( IOException exception ) {
+			return new JSONValue();
+		}
+	}
+
 	public static void parse( String json, JSONEventListener listener ) throws IOException {
 		if( json != null ) {
 			parse( JSONUtils.toByteArray( json ), listener );

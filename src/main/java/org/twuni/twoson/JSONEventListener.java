@@ -38,6 +38,8 @@ public interface JSONEventListener {
 
 	public void onInteger( int value );
 
+	public void onLong( long value );
+
 	public void onNull();
 
 	public void onObjectKey( byte [] value );

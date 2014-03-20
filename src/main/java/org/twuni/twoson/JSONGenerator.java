@@ -138,7 +138,7 @@ public class JSONGenerator {
 
 	public void writeString( byte [] value ) throws IOException {
 		if( value != null ) {
-			writeString( value, true );
+			writeString( value, false );
 		} else {
 			writeNull();
 		}
@@ -154,7 +154,7 @@ public class JSONGenerator {
 
 	public void writeString( byte [] value, int offset, int length ) throws IOException {
 		if( value != null ) {
-			writeString( value, offset, length, true );
+			writeString( value, offset, length, false );
 		} else {
 			writeNull();
 		}

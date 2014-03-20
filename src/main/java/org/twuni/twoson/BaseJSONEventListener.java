@@ -38,6 +38,11 @@ public class BaseJSONEventListener implements JSONEventListener {
 	}
 
 	@Override
+	public void onLong( long value ) {
+		// By default, do nothing.
+	}
+
+	@Override
 	public void onNull() {
 		// By default, do nothing.
 	}
