@@ -22,8 +22,6 @@
  */
 package org.twuni.twoson;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 public class JSONParserTest extends TestFixture {
@@ -80,12 +78,12 @@ public class JSONParserTest extends TestFixture {
 	}
 
 	@Test
-	public void read_onString_shouldCorrectlyParseEscapedLineBreaks() throws IOException {
+	public void read_onString_shouldCorrectlyParseEscapedLineBreaks() {
 		expectString( "{\"a\":\".\\n.\"}", ".\n." );
 	}
 
 	@Test
-	public void read_onString_shouldCorrectlyParseUnicodeCharacters() throws IOException {
+	public void read_onString_shouldCorrectlyParseUnicodeCharacters() {
 		expectString( "{\"a\":\"Ǥ😀\"}", "Ǥ😀" );
 	}
 

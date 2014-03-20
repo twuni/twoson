@@ -1,7 +1,5 @@
 package org.twuni.twoson;
 
-import java.io.IOException;
-
 public class TestFixture extends Assert {
 
 	public static JSONStringExpectation expectString( byte [] expected ) {
@@ -12,7 +10,7 @@ public class TestFixture extends Assert {
 		return new JSONStringExpectation( expected );
 	}
 
-	public static void expectString( String json, String expected ) throws IOException {
+	public static void expectString( String json, String expected ) {
 		JSONStringExpectation expectation = expectString( expected );
 		JSONParser.parse( json, expectation );
 		assertArrayEquals( expectation.expectation.expected, expectation.expectation.actual );

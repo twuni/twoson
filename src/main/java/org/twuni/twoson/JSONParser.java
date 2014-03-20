@@ -47,16 +47,39 @@ public class JSONParser {
 		return '0' <= c && c <= '9';
 	}
 
-	public static void parse( byte [] in, int offset, int length, JSONEventListener listener ) throws IOException {
+	public static JSONValue parse( byte [] in ) {
 		if( in != null ) {
-			parse( new ByteArrayInputStream( in, offset, length ), listener );
+			return parse( in, 0, in.length );
+		}
+		return new JSONValue();
+	}
+
+	public static JSONValue parse( byte [] in, int offset, int length ) {
+		JSONValueBuilder listener = new JSONValueBuilder();
+		JSONParser.parse( in, offset, length, listener );
+		return listener.getResult();
+	}
+
+	public static void parse( byte [] in, int offset, int length, JSONEventListener listener ) {
+		if( in != null ) {
+			try {
+				parse( new ByteArrayInputStream( in, offset, length ), listener );
+			} catch( IOException ignore ) {
+				// Surely this cannot happen.
+			}
 		}
 	}
 
-	public static void parse( byte [] in, JSONEventListener listener ) throws IOException {
+	public static void parse( byte [] in, JSONEventListener listener ) {
 		if( in != null ) {
-			parse( new ByteArrayInputStream( in ), listener );
+			parse( in, 0, in.length, listener );
 		}
+	}
+
+	public static JSONValue parse( InputStream in ) throws IOException {
+		JSONValueBuilder listener = new JSONValueBuilder();
+		JSONParser.parse( in, listener );
+		return listener.getResult();
 	}
 
 	public static void parse( InputStream in, JSONEventListener listener ) throws IOException {
@@ -66,16 +89,10 @@ public class JSONParser {
 	}
 
 	public static JSONValue parse( String json ) {
-		try {
-			JSONValueBuilder listener = new JSONValueBuilder();
-			JSONParser.parse( json, listener );
-			return listener.getResult();
-		} catch( IOException exception ) {
-			return new JSONValue();
-		}
+		return json != null ? parse( JSONUtils.toByteArray( json ) ) : new JSONValue();
 	}
 
-	public static void parse( String json, JSONEventListener listener ) throws IOException {
+	public static void parse( String json, JSONEventListener listener ) {
 		if( json != null ) {
 			parse( JSONUtils.toByteArray( json ), listener );
 		}
