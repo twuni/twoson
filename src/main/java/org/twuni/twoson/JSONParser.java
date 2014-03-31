@@ -504,7 +504,11 @@ public class JSONParser {
 						double f = atof( c );
 						double d = ( f < 0 ? -1 : 1 ) * ( f - (int) f );
 						if( d < 0.00001 ) {
-							listener.onInteger( (int) f );
+							if( d > Integer.MAX_VALUE || d < Integer.MIN_VALUE ) {
+								listener.onLong( (long) f );
+							} else {
+								listener.onInteger( (int) f );
+							}
 						} else {
 							listener.onDouble( f );
 						}

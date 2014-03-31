@@ -31,19 +31,19 @@ public class JSONValue {
 	}
 
 	public JSONValue( boolean value ) {
-		this( Type.BOOLEAN, value, 0, 0, 0, null, null, null );
+		this( Type.BOOLEAN, value, value ? 1 : 0, value ? 1 : 0, value ? 1 : 0, null, null, null );
 	}
 
 	public JSONValue( byte [] value ) {
-		this( Type.STRING, false, 0, 0, 0, value, null, null );
+		this( Type.STRING, value != null, value != null ? 1 : 0, value != null ? 1 : 0, value != null ? 1 : 0, value, null, null );
 	}
 
 	public JSONValue( double value ) {
-		this( Type.DOUBLE, false, 0, 0, value, null, null, null );
+		this( Type.DOUBLE, value != 0, (int) value, (long) value, value, null, null, null );
 	}
 
 	public JSONValue( int value ) {
-		this( Type.INTEGER, false, value, 0, 0, null, null, null );
+		this( Type.INTEGER, value != 0, value, value, value, null, null, null );
 	}
 
 	public JSONValue( JSONObjectProperty [] value ) {
@@ -63,7 +63,7 @@ public class JSONValue {
 	}
 
 	public JSONValue( long value ) {
-		this( Type.LONG, false, 0, value, 0, null, null, null );
+		this( Type.LONG, value != 0, (int) value, value, value, null, null, null );
 	}
 
 	private JSONValue( Type type, boolean booleanValue, int intValue, long longValue, double doubleValue, byte [] stringValue, JSONObjectProperty [] objectValue, JSONValue [] arrayValue ) {
